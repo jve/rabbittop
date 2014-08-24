@@ -1,7 +1,10 @@
 import atexit
+import argparse
+import curses
+import sys
 import time
 
-from rabbit_top import _rabbitmq, terminal, utils
+from rabbittop import _rabbitmq, terminal, utils
 
 memory_treshold_warning = 75
 memory_treshold_error = 95
@@ -21,6 +24,17 @@ messages_ready_error = 15
 messages_unack_warning = 10
 messages_unack_error = 15
 
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('host', help='Rabbit host to monitor')
+    parser.add_argument('-v', '--vhost', help='vhost to monitor', default=None)
+    parser.add_argument('-u', '--user', help='user', default='guest')
+    parser.add_argument('-pw', '--password', help='password', default='guest')
+    parser.add_argument('-p', '--port', help='Management ui port', default=15672)
+
+    args = parser.parse_args()
+    sys.exit(run(args))
+
 
 def run(args):
     term = terminal.Terminal()
@@ -28,8 +42,6 @@ def run(args):
     while True:
         rabbit = _rabbitmq.Rabbit(args.host, args.user, args.password, args.port, vhost=args.vhost)
         term.refresh()
-        height, width = term.get_size()
-
         term.addLine(
             'rabbitmq-%s - erlang-%s - %s - %s' % (
                 rabbit.version,
@@ -59,19 +71,28 @@ def run(args):
         line_index, column_count = _msg_rate(term, rabbit, line_index, column_count)
         line_index += 1
         column_count = 0
+        line_index, column_count = _delivery_details(term, rabbit, line_index, column_count)
+        line_index += 1
+        column_count = 0
         line_index, column_count = _object_details(term, rabbit, line_index, column_count)
         line_index += 1
         column_count = 0
 
-        left_panel = term.create_panel('left', height, 50, line_index, 0)
-        right_panel = term.create_panel('right', height, width - 50, line_index, 51)
+        _queue_details(term, rabbit, line_index, column_count)
+        term.addLine("[a]ctive queues only", term.get_size()[0] - 1, 0, term.colors['REVERSE'])
 
-        #left_panel.addLine('panel1', 0, 0, term.colors['OK'])
-        #right_panel.addLine('panel2', 0, 0, term.colors['WARNING_LOG'])
-
-        line_index, column_count = _queue_details(term, rabbit, line_index, column_count)
-
-        if term.getch() == ord('q'):
+        char = term.getch()
+        if char == curses.KEY_UP:
+            term.up()
+            _queue_details(term, rabbit, line_index, column_count)
+        elif char == curses.KEY_DOWN:
+            term.down()
+            _queue_details(term, rabbit, line_index, column_count)
+        elif char == ord('a'):
+            rabbit.active_queues = True if not rabbit.active_queues else False
+        #elif char == self.SPACE_KEY:
+        #    self.markLine()
+        elif char == ord('q'):
             term.stop()
             break
 
@@ -220,7 +241,7 @@ def _msg_rate(term, rabbit, line_index, column_count):
 def _calculate_color(low_value, max_value, threshold_warning, threshold_error):
     percent = (float(low_value) / float(max_value)) * 100
     if percent >= threshold_warning and percent <= threshold_error:
-        return 'WARNING'
+        return 'CRITICAL'
     elif percent >= threshold_error:
         return 'CRITICAL_LOG'
     return 'OK'
@@ -228,30 +249,46 @@ def _calculate_color(low_value, max_value, threshold_warning, threshold_error):
 
 def _calculate_color_values(value, threshold_warning, threshold_error):
     if value >= threshold_warning and value <= threshold_error:
-        return 'WARNING'
+        return 'CRITICAL'
     elif value >= threshold_error:
         return 'CRITICAL_LOG'
     return 'OK'
 
 def _queue_details(term, rabbit, line_index, column_count):
+    #import pdb; pdb.set_trace()
     term.addLine("\t\t\toverview\t\t\t\tmessages\t\t\trates\t\t\t\t", line_index, 0, term.colors['REVERSE'])
     line_index += 1
-
     term.addLine("NAME\tVHOST\tEXCL\tPARAMS\tPOLICY\tSTATE\t\tREADY\tUNACK\tTOTAL\t\tINC\tDELIVER/GET\tACK\t", line_index, 0, term.colors['TITLE'])
-    for queue in rabbit.queues:
-        line_index += 1
+    line_index += 1
+
+    max_length = term.get_size()[0] - line_index - 1 # removing one more line for bottom line
+
+    start = max(term.start_row - term.selected_row, 0)
+    if term.selected_row == 0:
+        term.selected_row = line_index
+
+    for queue in rabbit.queues[start: min(max_length + start, len(rabbit.queues))]:
+        color = 'NICE' if line_index != term.selected_row else 'CAREFUL_LOG'
         term.addLine("%s\t%s\t%s\t%s\t%s\t%s\t\t%s\t%s\t%s\t\t%s\t%s\t\t%s\t" % (
             queue.name, queue.vhost, queue.exclusive, queue.params, queue.policy, queue.state, queue.ready, queue.unacked,
             queue.total, queue.total_rate, queue.ready_rate, queue.unacked_rate),
             line_index, 0,
-            term.colors['NICE']
+            term.colors[color]
         )
+        line_index += 1
 
     return line_index, column_count
 
 def _object_details(term, rabbit, line_index, column_count):
     line = 'Objects \t '
     for key, value in rabbit.objects.iteritems():
+        line += '%s: %s \t ' % (key, value)
+    term.addLine(line, line_index, column_count, term.colors['TITLE'])
+    return line_index, column_count
+
+def _delivery_details(term, rabbit, line_index, column_count):
+    line = 'Stats \t\t '
+    for key, value in rabbit.details.iteritems():
         line += '%s: %s \t ' % (key, value)
     term.addLine(line, line_index, column_count, term.colors['TITLE'])
     return line_index, column_count

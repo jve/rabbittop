@@ -86,6 +86,7 @@ class Rabbit(object):
             },
         }
         self._objects = _overview['object_totals']
+        self._stats = _overview['message_stats']
 
         self._nodes = []
         nodes = status(management_node, user, password, port, node_name=None)
@@ -97,6 +98,7 @@ class Rabbit(object):
         for queue in queues:
             self._queues.append(RabbitQueue(queue))
 
+        self.active_queues = False
 
     @property
     def nodes(self):
@@ -104,11 +106,25 @@ class Rabbit(object):
 
     @property
     def queues(self):
+        if self.active_queues:
+            return [queue for queue in self._queues if queue.state != 'idle']
         return self._queues
 
     @property
     def objects(self):
         return self._objects
+
+    @property
+    def details(self):
+        keys = {
+            'publish_details': 'Publish',
+            'acknowledgment_details': 'Ack',
+            'confirm_details': 'Confirm',
+        }
+        details = {}
+        for key in keys:
+            details[keys[key]] = self._stats.get(key, {'rate': 'N/A'})['rate']
+        return details
 
 class Node(object):
     def __init__(self, node_data):
