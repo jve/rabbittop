@@ -26,3 +26,5 @@ optional arguments:
   -pw PASSWORD, --password PASSWORD password           (default=guest)
   -p PORT,      --port PORT         Management ui port (port=15672)
 ```
+
+![](https://github.com/jve/rabbit_top/blob/master/screenshots/rabbittop.png)
