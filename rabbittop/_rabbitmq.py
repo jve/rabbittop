@@ -150,30 +150,30 @@ class Node(object):
 
 class RabbitQueue(object):
     def __init__(self, queue_data):
-        self.name = queue_data['name']
-        self.vhost = queue_data['vhost']
-        self.state = queue_data['state']
+        self.name = queue_data.get('name')
+        self.vhost = queue_data.get('vhost')
+        self.state = queue_data.get('state')
         self.policy = ''
         self.exclusive = ''
         self.params = ''
         self.state = ''
-        self.total = queue_data['messages']
-        self.total_rate = queue_data['messages_details']['rate']
-        self.ready = queue_data['messages_ready']
-        self.ready_rate = queue_data['messages_ready_details']['rate']
-        self.unacked = queue_data['messages_unacknowledged']
-        self.unacked_rate = queue_data['messages_unacknowledged_details']['rate']
+        self.total = queue_data.get('messages')
+        self.total_rate = queue_data.get('messages_details', {'rate': 'N/A'})['rate']
+        self.ready = queue_data.get('messages_ready')
+        self.ready_rate = queue_data.get('messages_ready_details', {'rate': 'N/A'})['rate']
+        self.unacked = queue_data.get('messages_unacknowledged')
+        self.unacked_rate = queue_data.get('messages_unacknowledged_details', {'rate': 'N/A'})['rate']
         self.messages = {
             'total': {
-                'count': queue_data['messages'],
-                'rate': queue_data['messages_details']['rate']
+                'count': queue_data.get('messages'),
+                'rate': queue_data.get('messages_details', {'rate': 'N/A'})['rate']
             },
             'ready': {
-                'count': queue_data['messages_ready'],
-                'rate': queue_data['messages_ready_details']['rate']
+                'count': queue_data.get('messages_ready'),
+                'rate': queue_data.get('messages_ready_details', {'rate': 'N/A'})['rate']
             },
             'unacknowledged': {
-                'count': queue_data['messages_unacknowledged'],
-                'rate': queue_data['messages_unacknowledged_details']['rate']
+                'count': queue_data.get('messages_unacknowledged'),
+                'rate': queue_data.get('messages_unacknowledged_details', {'rate': 'N/A'})['rate']
             },
         }

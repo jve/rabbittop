@@ -15,14 +15,14 @@ It has no further external dependencies.
 Command line options:
 ---------------------
 
-```
-usage: rabbittop [-h] [-v VHOST] [-u USER] [-pw PASSWORD] [-p PORT] host
-positional arguments:
-  host                  Rabbit host to monitor
-optional arguments:
-  -h,           --help              show this help message and exit
-  -v VHOST,     --vhost VHOST       vhost to monitor   (default=all)
-  -u USER,      --user USER         user               (default=guest)
-  -pw PASSWORD, --password PASSWORD password           (default=guest)
-  -p PORT,      --port PORT         Management ui port (port=15672)
-```
+::
+
+    usage: rabbittop [-h] [-v VHOST] [-u USER] [-pw PASSWORD] [-p PORT] host
+    positional arguments:
+      host                  Rabbit host to monitor
+    optional arguments:
+      -h,           --help              show this help message and exit
+      -v VHOST,     --vhost VHOST       vhost to monitor   (default=all)
+      -u USER,      --user USER         user               (default=guest)
+      -pw PASSWORD, --password PASSWORD password           (default=guest)
+      -p PORT,      --port PORT         Management ui port (port=15672)

@@ -1,9 +1,13 @@
 from setuptools import setup, find_packages
 
+with open('readme.rst') as readme_file:
+    long_description = readme_file.read()
+
 setup(
     name="rabbittop",
     version="0.1.0",
     description="RabbitMQ commandline monitoring tool",
+    long_description=long_description,
     url="https://github.com/jve/rabbit_top",
     author="Jozef van Eenbergen",
     author_email="jvaneenbergen@gmail.com",
@@ -17,7 +21,8 @@ setup(
 
         # Indicate who your project is intended for
         'Intended Audience :: Developers :: System Administrators :: Operations',
-        'Topic :: Software Development :: Monitoring',
+        'Topic :: System :: Monitoring',
+        'Topic :: Utilities',
 
         # Pick your license as you wish (should match "license" above)
         'License :: OSI Approved :: MIT License',
